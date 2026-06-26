@@ -1,0 +1,45 @@
+# ── User settings & credentials ──────────────────────────────
+config.json
+credentials*.json
+*service-account*.json
+*service_account*.json
+*.json
+!requirements*.json
+
+# ── Python cache ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ── Virtual environment ───────────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── PyInstaller build output ──────────────────────────────────
+dist/
+build/
+*.spec
+*.exe
+*.app
+
+# ── Sample output (processed photos) ─────────────────────────
+samples/output/suumo/
+
+# ── IDE & OS files ────────────────────────────────────────────
+.idea/
+.vscode/
+*.suo
+*.user
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ─────────────────────────────────────────────────────
+processing_log_*.json
+*.log
+
+# ── Environment variables ─────────────────────────────────────
+.env
+.env.*

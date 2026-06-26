@@ -1,0 +1,11 @@
+# Rent Magazine — Phase 1 Image Processing
+# Install with:  pip install -r requirements.txt
+
+# Required
+Pillow>=9.0
+numpy>=1.20
+PyQt5>=5.15
+
+# Optional — enables Google Sheets Property Master integration
+gspread>=5.0
+google-auth>=2.0
