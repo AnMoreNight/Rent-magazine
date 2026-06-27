@@ -6,6 +6,9 @@ credentials*.json
 *.json
 !requirements*.json
 
+# ── Embedded credentials (compiled into exe, never committed) ─
+rentmag/credentials.py
+
 # ── Python cache ──────────────────────────────────────────────
 __pycache__/
 *.py[cod]

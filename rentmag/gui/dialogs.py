@@ -94,22 +94,9 @@ class FileSettingsDialog(QDialog):
         lay = QVBoxLayout(grp)
         lay.setSpacing(8)
 
-        # ── Credentials / sheet name (FormLayout) ──────────────────────────
-        form = QFormLayout()
-        form.setSpacing(6)
-        form.setLabelAlignment(Qt.AlignRight)
-
-        r_creds = QHBoxLayout()
-        self.creds_edit = QLineEdit()
-        self.creds_edit.setPlaceholderText("service-account.json")
-        r_creds.addWidget(self.creds_edit)
-        b_creds = btn("参照...", "btn-secondary")
-        b_creds.setFixedWidth(58)
-        b_creds.clicked.connect(self._pick_creds)
-        r_creds.addWidget(b_creds)
-        form.addRow("認証ファイル:", r_creds)
-
+        # Sheet name + connect (credentials are embedded — no file picker needed)
         r_sheet = QHBoxLayout()
+        r_sheet.addWidget(QLabel("シート名:"))
         self.sheet_edit = QLineEdit()
         self.sheet_edit.setPlaceholderText("物件管理番号マスター")
         r_sheet.addWidget(self.sheet_edit)
@@ -117,21 +104,17 @@ class FileSettingsDialog(QDialog):
         b_conn.setFixedWidth(58)
         b_conn.clicked.connect(self._connect)
         r_sheet.addWidget(b_conn)
-        form.addRow("シート名:", r_sheet)
+        lay.addLayout(r_sheet)
 
-        lay.addLayout(form)
-
-        # Status label
         self._status_lbl = QLabel("")
         self._status_lbl.setStyleSheet(f"color: {MUTED}; font-size: 10px;")
         lay.addWidget(self._status_lbl)
 
-        # ── Separator ──────────────────────────────────────────────────────
         sep = QFrame()
-        sep.setStyleSheet(f"background: #D6DAE1; border: none; max-height: 1px;")
+        sep.setStyleSheet("background: #D6DAE1; border: none; max-height: 1px;")
         lay.addWidget(sep)
 
-        # ── Property / room selection ──────────────────────────────────────
+        # Property / room dropdowns
         sel_grid = QGridLayout()
         sel_grid.setSpacing(6)
         sel_grid.setColumnMinimumWidth(0, 40)
@@ -147,7 +130,6 @@ class FileSettingsDialog(QDialog):
         sel_grid.addWidget(QLabel("号室:"), 0, 2)
         self.room_combo = QComboBox()
         sel_grid.addWidget(self.room_combo, 0, 3)
-
         lay.addLayout(sel_grid)
 
         b_fill = btn("物件情報を自動入力", "btn-secondary")
@@ -170,28 +152,20 @@ class FileSettingsDialog(QDialog):
         d = QFileDialog.getExistingDirectory(self, "出力フォルダ", self.settings.get("last_output_dir"))
         if d: self.output_edit.setText(d)
 
-    def _pick_creds(self) -> None:
-        f, _ = QFileDialog.getOpenFileName(self, "認証ファイル", "", "JSON (*.json)")
-        if f: self.creds_edit.setText(f)
-
     # ── Sheets ─────────────────────────────────────────────────────────────────
 
     def _connect(self) -> None:
-        creds = self.creds_edit.text().strip()
-        sheet = self.sheet_edit.text().strip()
-        if not creds:
-            self._set_status("❌ 認証ファイルを指定してください", ERROR)
-            return
+        sheet = self.sheet_edit.text().strip() or "物件管理番号マスター"
         try:
             client = PropertyMasterClient()
-            client.connect(creds, sheet)
+            client.connect(sheet)          # uses embedded credentials
             self._client = client
             props = self._client.property_names()
             self.prop_combo.clear()
             self.prop_combo.addItems(props)
-            self._set_status(f"✅ 接続成功（{len(props)}件）", SUCCESS)
+            self._set_status(f"接続成功（{len(props)}件）", SUCCESS)
         except Exception as e:
-            self._set_status(f"❌ {e}", ERROR)
+            self._set_status(f"エラー: {e}", ERROR)
 
     def _on_property_changed(self, prop: str) -> None:
         if self._client and prop:
@@ -236,7 +210,6 @@ class FileSettingsDialog(QDialog):
         self.input_edit.setText(s.get("last_input_dir"))
         self.logo_edit.setText(s.get("last_logo_path"))
         self.output_edit.setText(s.get("last_output_dir"))
-        self.creds_edit.setText(s.get("credentials_path"))
         self.sheet_edit.setText(s.get("sheet_name"))
 
     def _accept(self) -> None:
@@ -252,11 +225,10 @@ class FileSettingsDialog(QDialog):
             return
 
         s = self.settings
-        s.set("last_input_dir",   self.input_edit.text().strip())
-        s.set("last_logo_path",   self.logo_edit.text().strip())
-        s.set("last_output_dir",  self.output_edit.text().strip())
-        s.set("credentials_path", self.creds_edit.text().strip())
-        s.set("sheet_name",       self.sheet_edit.text().strip())
+        s.set("last_input_dir",  self.input_edit.text().strip())
+        s.set("last_logo_path",  self.logo_edit.text().strip())
+        s.set("last_output_dir", self.output_edit.text().strip())
+        s.set("sheet_name",      self.sheet_edit.text().strip())
         s.save()
         self.accept()
 

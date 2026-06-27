@@ -15,7 +15,7 @@ Sheet must have these column headers (exact match):
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 try:
     import gspread
@@ -23,6 +23,13 @@ try:
     _AVAILABLE = True
 except ImportError:
     _AVAILABLE = False
+
+# Embedded service-account credentials (gitignored, compiled into exe).
+# Falls back gracefully if the file hasn't been created yet.
+try:
+    from rentmag.credentials import CREDENTIALS as _EMBEDDED_CREDS
+except ImportError:
+    _EMBEDDED_CREDS = None
 
 _SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets.readonly",
@@ -70,21 +77,50 @@ class PropertyMasterClient:
 
     # ── Connection ─────────────────────────────────────────────────────────────
 
-    def connect(self, credentials_path: str, sheet_name: str) -> None:
-        """Load all records from the sheet. Raises SheetsError on any failure."""
+    def connect(self, sheet_name: str,
+                credentials: Union[str, dict, None] = None) -> None:
+        """
+        Load all records from the sheet.
+
+        credentials — one of:
+          None        use the embedded CREDENTIALS dict (default)
+          dict        service-account info dict
+          str/Path    path to a service-account JSON file (legacy / dev use)
+
+        Raises SheetsError on any failure.
+        """
         if not _AVAILABLE:
             raise SheetsError(
                 "Required packages missing.\n"
                 "Run: pip install gspread google-auth"
             )
-        creds_file = Path(credentials_path)
-        if not creds_file.exists():
-            raise SheetsError(f"Credentials file not found: {credentials_path}")
+
+        # Resolve credentials
+        if credentials is None:
+            if _EMBEDDED_CREDS is None:
+                raise SheetsError(
+                    "No credentials available.\n"
+                    "rentmag/credentials.py is missing."
+                )
+            creds_obj = Credentials.from_service_account_info(
+                _EMBEDDED_CREDS, scopes=_SCOPES
+            )
+        elif isinstance(credentials, dict):
+            creds_obj = Credentials.from_service_account_info(
+                credentials, scopes=_SCOPES
+            )
+        else:
+            creds_file = Path(credentials)
+            if not creds_file.exists():
+                raise SheetsError(f"Credentials file not found: {credentials}")
+            creds_obj = Credentials.from_service_account_file(
+                str(creds_file), scopes=_SCOPES
+            )
+
         try:
-            creds          = Credentials.from_service_account_file(str(creds_file), scopes=_SCOPES)
-            gc             = gspread.authorize(creds)
-            sheet          = gc.open(sheet_name).sheet1
-            self._records  = sheet.get_all_records()
+            gc            = gspread.authorize(creds_obj)
+            sheet         = gc.open(sheet_name).sheet1
+            self._records = sheet.get_all_records()
         except gspread.exceptions.SpreadsheetNotFound:
             raise SheetsError(
                 f'Sheet "{sheet_name}" not found.\n'
@@ -113,9 +149,10 @@ class PropertyMasterClient:
 
     def refresh(self) -> None:
         """Reload records using the current credentials."""
-        creds, name = self._creds_path, self._sheet_name
+        name  = self._sheet_name
+        creds = self._creds_path or None   # None → use embedded
         self.disconnect()
-        self.connect(creds, name)
+        self.connect(name, credentials=creds)
 
     @property
     def is_connected(self) -> bool:
