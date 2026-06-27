@@ -23,7 +23,7 @@ STEPS = ["検出", "リネーム", "振り分け", "レタッチ", "ロゴ挿入
 # ── Stylesheet ─────────────────────────────────────────────────────────────────
 QSS = f"""
 * {{
-    font-family: "Segoe UI", "Yu Gothic UI", "Meiryo UI", sans-serif;
+    font-family: "Meiryo", "Meiryo UI", "Yu Gothic UI", "MS UI Gothic", sans-serif;
     font-size: 11px;
     color: {TEXT1};
 }}
@@ -69,18 +69,11 @@ QLabel#stat-lbl      {{ color: {TEXT2}; font-size: 10px; }}
 QLabel#stat-num      {{ font-size: 13px; font-weight: 700; }}
 QLabel#pct-label     {{ color: {TEXT1}; font-size: 26px; font-weight: 800; }}
 
-/* ── Right panel separators ─────────────────────────────────────────── */
-QFrame#right-sep-h {{
-    background: {BORDER};
-    border: none;
-    max-height: 1px;
-    min-height: 1px;
-}}
-QFrame#right-sep-v {{
-    background: {BORDER};
-    border: none;
-    max-width: 1px;
-    min-width: 1px;
+/* ── Right panel cards ──────────────────────────────────────────────── */
+QFrame#right-card {{
+    background: {CARD};
+    border: 1px solid {BORDER};
+    border-radius: 5px;
 }}
 
 /* ── Buttons ────────────────────────────────────────────────────────── */
@@ -169,21 +162,27 @@ QTableWidget {{
     border: none;
     background: {CARD};
     outline: none;
-    gridline-color: transparent;
+    gridline-color: {BORDER};
     font-size: 10px;
     selection-background-color: #DBEAFE;
     selection-color: {TEXT1};
 }}
-QTableWidget::item          {{ padding: 3px 8px; border-bottom: 1px solid #F3F4F6; }}
+QTableWidget::item          {{ padding: 3px 8px; border-bottom: 1px solid {BORDER}; }}
 QTableWidget::item:selected {{ background: #DBEAFE; color: {TEXT1}; }}
 QHeaderView::section {{
-    background: #F9FAFB;
+    background: #F3F5F7;
     color: {TEXT2};
     border: none;
+    border-right: 1px solid {BORDER};
     border-bottom: 1px solid {BORDER};
     padding: 4px 8px;
     font-size: 10px;
     font-weight: 600;
+}}
+QFrame#log-frame {{
+    border: 1px solid {BORDER};
+    border-radius: 4px;
+    background: {CARD};
 }}
 
 /* ── Inputs ─────────────────────────────────────────────────────────── */

@@ -20,7 +20,7 @@ from rentmag.settings import SettingsManager
 from rentmag.worker import ProcessingWorker
 from rentmag.gui.styles import (
     QSS, STEPS,
-    CARD, BORDER, ACCENT, ACCENT2,
+    BG, CARD, BORDER, ACCENT, ACCENT2,
     SUCCESS, WARN, ERROR, ERROR_BG, WARN_BG,
     TEXT1, TEXT2, MUTED, PANEL_BG,
 )
@@ -274,30 +274,30 @@ class RentMagApp(QMainWindow):
 
     def _build_right_panel(self) -> QWidget:
         panel = QWidget()
-        panel.setStyleSheet(f"background: {CARD};")
+        panel.setStyleSheet(f"background: {BG};")
         lay = QVBoxLayout(panel)
-        lay.setSpacing(0)
-        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(6)
+        lay.setContentsMargins(8, 8, 8, 8)
 
-        # Progress strip (fixed height)
-        lay.addWidget(self._build_progress_section())
-
-        def _sep():
-            f = QFrame(); f.setObjectName("right-sep-h"); return f
-
-        # Log — fills all remaining vertical space
-        lay.addWidget(_sep())
-        lay.addWidget(self._build_log_section(), 1)
-
-        # Preview — fixed height below log
-        lay.addWidget(_sep())
-        lay.addWidget(self._build_preview_section())
+        lay.addWidget(self._card_wrap(self._build_progress_section()))
+        lay.addWidget(self._card_wrap(self._build_log_section()), 1)
+        lay.addWidget(self._card_wrap(self._build_preview_section()))
 
         return panel
 
+    def _card_wrap(self, widget: QWidget) -> QFrame:
+        """Wrap a section widget in a bordered card frame."""
+        frame = QFrame()
+        frame.setObjectName("right-card")
+        inner = QVBoxLayout(frame)
+        inner.setSpacing(0)
+        inner.setContentsMargins(0, 0, 0, 0)
+        inner.addWidget(widget)
+        return frame
+
     def _build_progress_section(self) -> QWidget:
         w = QWidget()
-        w.setStyleSheet(f"background: {CARD};")
+        w.setStyleSheet("background: transparent;")
         w.setFixedHeight(170)
         lay = QVBoxLayout(w)
         lay.setContentsMargins(20, 14, 20, 14)
@@ -370,11 +370,12 @@ class RentMagApp(QMainWindow):
 
     def _build_log_section(self) -> QWidget:
         w = QWidget()
-        w.setStyleSheet(f"background: {CARD};")
+        w.setStyleSheet("background: transparent;")
         lay = QVBoxLayout(w)
-        lay.setContentsMargins(16, 12, 16, 10)
+        lay.setContentsMargins(12, 10, 12, 10)
         lay.setSpacing(8)
 
+        # Header: title + filter
         hdr = QHBoxLayout()
         hdr.addWidget(label("ログ", "section-title"))
         hdr.addStretch()
@@ -385,6 +386,13 @@ class RentMagApp(QMainWindow):
         hdr.addWidget(self._log_filter)
         lay.addLayout(hdr)
 
+        # Log table inside a bordered frame
+        log_frame = QFrame()
+        log_frame.setObjectName("log-frame")
+        lf_lay = QVBoxLayout(log_frame)
+        lf_lay.setContentsMargins(0, 0, 0, 0)
+        lf_lay.setSpacing(0)
+
         self._log_table = QTableWidget(0, 3)
         self._log_table.setHorizontalHeaderLabels(["日時", "Lv", "メッセージ"])
         self._log_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
@@ -393,12 +401,15 @@ class RentMagApp(QMainWindow):
         self._log_table.verticalHeader().setVisible(False)
         self._log_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._log_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self._log_table.setShowGrid(False)
-        lay.addWidget(self._log_table, 1)
+        self._log_table.setShowGrid(True)
+        lf_lay.addWidget(self._log_table)
+        lay.addWidget(log_frame, 1)
 
+        # Footer buttons with visible borders
         foot = QHBoxLayout()
-        b1 = btn("ログを保存",  "btn-link"); b1.clicked.connect(self._save_log)
-        b2 = btn("クリア",      "btn-link"); b2.clicked.connect(self._clear_log)
+        foot.setSpacing(6)
+        b1 = btn("ログを保存", "btn-secondary"); b1.clicked.connect(self._save_log)
+        b2 = btn("クリア",     "btn-secondary"); b2.clicked.connect(self._clear_log)
         foot.addWidget(b1)
         foot.addWidget(b2)
         foot.addStretch()
@@ -407,7 +418,7 @@ class RentMagApp(QMainWindow):
 
     def _build_preview_section(self) -> QWidget:
         w = QWidget()
-        w.setStyleSheet(f"background: {CARD};")
+        w.setStyleSheet("background: transparent;")
         w.setFixedHeight(252)
         lay = QVBoxLayout(w)
         lay.setContentsMargins(16, 10, 16, 10)
